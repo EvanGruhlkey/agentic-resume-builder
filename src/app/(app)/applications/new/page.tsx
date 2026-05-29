@@ -1,6 +1,10 @@
+import { NewApplicationForm } from "@/components/applications/new-application-form";
 import { PageHeader } from "@/components/page-header";
+import { listMasterResumes } from "@/lib/storage";
 
-export default function NewApplicationPage() {
+export default async function NewApplicationPage() {
+  const masterResumes = await listMasterResumes();
+
   return (
     <>
       <PageHeader
@@ -8,9 +12,7 @@ export default function NewApplicationPage() {
         description="Paste a job description and create a tailored resume packet."
       />
       <div className="px-6 py-6">
-        <p className="text-sm text-zinc-600">
-          Application creation form will be added in a later step.
-        </p>
+        <NewApplicationForm masterResumes={masterResumes} />
       </div>
     </>
   );
