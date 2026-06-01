@@ -1,26 +1,21 @@
 {
-  "name": "applykit",
-  "version": "0.1.0",
-  "private": true,
+  "name": "resume-job-agent",
+  "version": "1.0.0",
+  "description": "Local resume tailoring app that finds public job descriptions without job-board APIs.",
+  "type": "module",
+  "main": "src/server.js",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node src/jobIndex/matching.test.js",
+    "check": "node --check src/server.js && node --check src/jobSearch.js && node --check src/jobSourceConfig.js && node --check src/resumeParser.js && node --check src/tailor.js && node --check src/llm.js && node --check src/agenticBrowserSearch.js && node --check src/jobIndex/sourceDefinitions.js && node --check src/jobIndex/utils.js && node --check src/jobIndex/pageFetcher.js && node --check src/jobIndex/searchPlanner.js && node --check src/jobIndex/database.js && node --check src/jobIndex/adapters.js && node --check src/jobIndex/indexer.js && node --check src/jobIndex/matching.test.js"
   },
   "dependencies": {
-    "next": "16.2.6",
-    "react": "19.2.4",
-    "react-dom": "19.2.4"
-  },
-  "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.2.6",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "cheerio": "^1.0.0",
+    "express": "^4.19.2",
+    "mammoth": "^1.8.0",
+    "multer": "^2.0.2",
+    "pdf-parse": "^1.1.1",
+    "playwright": "^1.60.0"
   }
 }

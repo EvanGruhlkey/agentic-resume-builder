@@ -1,0 +1,65 @@
+search:
+  keywords:
+    - software engineer
+    - backend engineer OR platform engineer
+  locations:
+    - Remote
+    - Chicago, IL
+  freshness: past_week # past_24h or past_week
+  remote: true
+  hybrid: true
+  onsite: true
+  experience_levels:
+    - entry
+    - mid
+    - senior
+  salary_min: null
+  boolean_mode: true
+
+platforms:
+  enabled:
+    - linkedin
+    - indeed
+    - glassdoor
+    - ziprecruiter
+    - monster
+    - dice
+    - builtin
+    - wellfound
+    - handshake
+    - careerbuilder
+    - usajobs
+  max_jobs_per_platform: 100
+  max_pages_per_platform: 8
+  concurrency: 3
+
+storage:
+  sqlite_path: data/python-job-crawler/jobs.sqlite
+  export_dir: data/python-job-crawler/exports
+  export_csv: true
+  export_json: true
+
+filters:
+  blacklisted_companies: []
+  required_terms: []
+  excluded_terms: []
+
+browser:
+  headless: true
+  slow_mo_ms: 0
+  navigation_timeout_ms: 30000
+  min_delay_seconds: 1.2
+  max_delay_seconds: 4.5
+  user_agents:
+    - Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36
+    - Mozilla/5.0 (Macintosh; Intel Mac OS X 14_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36
+  proxy:
+    enabled: false
+    server: null
+    username: null
+    password: null
+
+usajobs:
+  # Optional. USAJobs' official API may require an API key for higher reliability.
+  api_key: null
+  user_agent_email: null

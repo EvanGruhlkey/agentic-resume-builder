@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Resume Job Agent</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="workspace">
+        <aside class="control-panel">
+          <div class="brand">
+            <div class="brand-mark">RJ</div>
+            <div>
+              <h1>Resume Job Agent</h1>
+              <p>Find roles, tailor honestly, apply faster.</p>
+            </div>
+          </div>
+
+          <form id="searchForm" class="search-form">
+            <label>
+              Target job title
+              <input id="targetTitle" name="targetTitle" placeholder="Frontend Developer" required />
+            </label>
+
+            <label>
+              Location
+              <input id="location" name="location" placeholder="Remote, Chicago, Austin..." />
+            </label>
+
+            <div class="inline-field">
+              <label>
+                Results
+                <input id="maxJobs" name="maxJobs" type="number" min="1" max="200" value="25" />
+              </label>
+              <label>
+                Freshness days
+                <input id="recentWindowDays" name="recentWindowDays" type="number" min="1" max="365" value="14" />
+              </label>
+            </div>
+
+            <div class="search-options" aria-label="Search options">
+              <label class="checkbox-option">
+                <input id="recentOnly" name="recentOnly" type="checkbox" checked />
+                <span>Recent only</span>
+              </label>
+              <label class="checkbox-option">
+                <input id="searchAllSources" name="searchAllSources" type="checkbox" checked />
+                <span>Search all configured boards</span>
+              </label>
+            </div>
+
+            <label>
+              Upload resume
+              <input id="resumeFile" name="resumeFile" type="file" accept=".txt,.md,.pdf,.docx" />
+            </label>
+
+            <label>
+              Or paste resume
+              <textarea id="resumeText" name="resumeText" rows="12" placeholder="Paste your resume here..."></textarea>
+            </label>
+
+            <button class="primary-action" type="submit">
+              <span class="button-icon">⌕</span>
+              Find jobs and tailor
+            </button>
+
+            <button id="agenticBtn" class="secondary-action full-width-action" type="button">
+              Run agentic browser search
+            </button>
+          </form>
+        </aside>
+
+        <section class="results-panel">
+          <div class="status-strip" id="statusStrip">
+            <span class="status-dot"></span>
+            Ready to search public job pages.
+          </div>
+
+          <div class="agent-grid" id="agentGrid"></div>
+
+          <details class="source-config-panel">
+            <summary>Configured Sources</summary>
+            <div id="sourceConfigList" class="source-config-list"></div>
+          </details>
+
+          <div class="browser-agent-panel" id="browserAgentPanel" hidden>
+            <div class="section-heading">
+              <h2>Browser Agents</h2>
+              <div class="toolbar">
+                <button id="resumeAgentBtn" class="secondary-action" type="button" hidden>Resume</button>
+                <button id="stopAgentBtn" class="icon-button" type="button" title="Stop browser agents">×</button>
+              </div>
+            </div>
+            <div id="browserAgentStatus" class="handoff-notice"></div>
+            <div id="browserAgentLogs" class="agent-log"></div>
+          </div>
+
+          <div class="content-grid">
+            <section class="jobs-column">
+              <div class="section-heading">
+                <h2>Job Matches</h2>
+                <span id="jobCount">0 found</span>
+              </div>
+              <div id="jobsList" class="jobs-list empty-state">
+                Add a resume and target title to start.
+              </div>
+            </section>
+
+            <section class="detail-column">
+              <div class="section-heading">
+                <h2>Tailored Resume</h2>
+                <div class="toolbar">
+                  <button id="copyBtn" class="icon-button" type="button" title="Copy tailored resume" disabled>⧉</button>
+                  <button id="downloadBtn" class="icon-button" type="button" title="Download Markdown" disabled>⇩</button>
+                  <a id="jobLink" class="icon-button link-button disabled" title="Open job description" target="_blank" rel="noreferrer">↗</a>
+                </div>
+              </div>
+
+              <div id="jobDetail" class="job-detail empty-state">
+                Select a job match to see the tailored resume and source description.
+              </div>
+            </section>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>
