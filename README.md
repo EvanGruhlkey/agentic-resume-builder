@@ -17,20 +17,62 @@ Enter a job title, optional location, and a result limit (max 200). The app load
 
 The UI lists matches with company, location, date, and source board. Select a row to view a summary and open the source posting.
 
-## Crawled job sources
+## Job board support
 
-When you press **Find jobs**, the crawler searches and normalizes jobs from these public sources. Results are still filtered by the requested job title and location, so a source may be searched but contribute zero results if its jobs do not match.
+When you press **Find jobs**, supported boards are searched from public pages only. Results are still filtered by the requested job title and location, so a supported board may return zero jobs for a specific search.
 
-| Source group | Boards / domains | How it is crawled | Notes |
-| --- | --- | --- | --- |
-| LinkedIn | `linkedin.com/jobs/search` | Opens public search result pages in a headless browser, scrolls/paginates, and parses visible job cards. | Often returns the most results, but may block or throttle public crawling. |
-| Indeed | `indeed.com/jobs` | Opens public search result pages, paginates with `start`, and parses visible job cards. | Sorted by date when possible. |
-| Greenhouse | `boards.greenhouse.io`, `job-boards.greenhouse.io` | Discovers public boards, then uses Greenhouse public board/job JSON endpoints when possible. | Seeded boards include Anduril, Figma, and Verkada. Strict title matching rejects broad board results that do not match the requested role. |
-| Ashby | `jobs.ashbyhq.com` | Discovers public boards, then uses Ashby public posting endpoints when possible. | Seeded boards include OpenAI, Anthropic, and Notion. Some Ashby boards do not expose a title search field, so matching happens after extraction. |
-| Lever | `jobs.lever.co` | Discovers public Lever boards and uses Lever public postings endpoints when possible. | Contributes results only when discovered postings match the requested title/location. |
-| GitHub hiring | `github.com`, `gist.github.com` | Searches public GitHub issues, repos, topics, and gists for hiring, internship, new-grad, careers, and apply links. | GitHub results are noisy, so extracted jobs must pass strict title matching. |
-| General boards | ZipRecruiter, Monster, CareerBuilder, SimplyHired, Getwork, Job.com, The Ladders, Nexxt, Jooble, Jora, Talent.com, Adzuna | Searches public web results constrained to those domains, fetches candidate job pages, and normalizes the posting text. | Coverage depends on what each board exposes publicly. |
-| Remote and niche boards | We Work Remotely, Remote OK, Remotive, Remote.co, Working Nomads, Himalayas, NoDesk, Wellfound, Y Combinator, Built In, Dice, USAJOBS, GovernmentJobs, Idealist, HigherEdJobs, Mediabistro, Poached, Craigslist, and others | Searches public web results constrained to remote, startup, tech, government, nonprofit, education, media, hospitality, and other niche board domains. | These sources are filtered after extraction; login/CAPTCHA/user-review pages are skipped. |
+| Job board / source | Supported | Notes |
+| --- | --- | --- |
+| LinkedIn | Yes | Public listing pages are opened and parsed. |
+| Indeed | Yes | Public listing pages are opened and parsed. |
+| Greenhouse | Yes | Public board/job endpoints are used when possible. |
+| Ashby | Yes | Public posting endpoints are used when possible. |
+| Lever | Yes | Public postings are used when discovered. |
+| GitHub hiring posts | Yes | Searches public issues, repos, topics, and gists. |
+| ZipRecruiter | Yes | Public web discovery and posting extraction. |
+| Monster | Yes | Public web discovery and posting extraction. |
+| CareerBuilder | Yes | Public web discovery and posting extraction. |
+| SimplyHired | Yes | Public web discovery and posting extraction. |
+| Getwork | Yes | Public web discovery and posting extraction. |
+| Job.com | Yes | Public web discovery and posting extraction. |
+| The Ladders | Yes | Public web discovery and posting extraction. |
+| Nexxt | Yes | Public web discovery and posting extraction. |
+| Jooble | Yes | Public web discovery and posting extraction. |
+| Jora | Yes | Public web discovery and posting extraction. |
+| Talent.com | Yes | Public web discovery and posting extraction. |
+| Adzuna | Yes | Public web discovery and posting extraction. |
+| We Work Remotely | Yes | Public web discovery and posting extraction. |
+| Remote OK | Yes | Public web discovery and posting extraction. |
+| Remotive | Yes | Public web discovery and posting extraction. |
+| Remote.co | Yes | Public web discovery and posting extraction. |
+| Working Nomads | Yes | Public web discovery and posting extraction. |
+| Himalayas | Yes | Public web discovery and posting extraction. |
+| NoDesk | Yes | Public web discovery and posting extraction. |
+| JustRemote | Yes | Public web discovery and posting extraction. |
+| Wellfound | Yes | Public web discovery only; login walls may limit coverage. |
+| Y Combinator Jobs | Yes | Public web discovery and posting extraction. |
+| Built In | Yes | Public web discovery and posting extraction. |
+| Dice | Yes | Public web discovery and posting extraction. |
+| Hacker News Who is Hiring | Yes | Public web discovery and posting extraction. |
+| Welcome to the Jungle | Yes | Public web discovery and posting extraction. |
+| Levels.fyi Jobs | Yes | Public web discovery and posting extraction. |
+| TrueUp | Yes | Public web discovery and posting extraction. |
+| Hire Tech Ladies | Yes | Public web discovery and posting extraction. |
+| Crunchboard | Yes | Public web discovery and posting extraction. |
+| Arc | Yes | Public web discovery and posting extraction. |
+| Turing | Yes | Public web discovery and posting extraction. |
+| USAJOBS | Yes | Public web discovery and posting extraction. |
+| GovernmentJobs | Yes | Public web discovery and posting extraction. |
+| Idealist | Yes | Public web discovery and posting extraction. |
+| HigherEdJobs | Yes | Public web discovery and posting extraction. |
+| Mediabistro | Yes | Public web discovery and posting extraction. |
+| Poached Jobs | Yes | Public web discovery and posting extraction. |
+| Craigslist jobs | Yes | Public web discovery and posting extraction. |
+| Glassdoor | No | Restricted because public crawling is commonly blocked/login-gated. |
+| Handshake | No | Login-gated for most useful results. |
+| Simplify.jobs | No | Restricted from crawler sources. |
+| Facebook jobs | No | Restricted/login-gated. |
+| X / Twitter jobs | No | Restricted/login-gated. |
 
 ## API
 
