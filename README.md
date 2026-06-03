@@ -1,109 +1,123 @@
 # Resume Job Agent
 
-Local job search by title and location. Uses public listing pages only—no paid APIs or accounts required.
+Local job search by title and location. It uses public pages and public posting endpoints only. No paid APIs or accounts are required.
 
-## Quick start
+## How to run
 
 ```bash
 npm install
 npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Use `npm run dev` for watch mode.
+Open [http://localhost:3000](http://localhost:3000).
 
-## Overview
+For development with auto-restart:
 
-Enter a job title, optional location, and a result limit (max 200). The app loads public search results in a headless browser, paginates until the limit is met or listings end, ranks matches by title and location fit, and stores them in `data/job-index.json`.
+```bash
+npm run dev
+```
 
-The UI lists matches with company, location, date, and source board. Select a row to view a summary and open the source posting.
+## How it works
 
-## Job board support
+Enter a job title, location, and result count, then press **Find jobs**.
 
-When you press **Find jobs**, these are the sources used by the current default crawler. A check means the source is actively searched by direct listing-page crawling, public ATS endpoints, GitHub discovery, or domain-constrained public web discovery. An x means it is not used by the default **Find jobs** flow.
+The app uses three discovery methods:
 
-| Job board / source | Supported |
+| Method | What it does |
 | --- | --- |
-| LinkedIn | ✅ |
-| Indeed | ✅ |
-| Greenhouse | ✅ |
-| Ashby | ✅ |
-| Lever | ✅ |
-| GitHub hiring posts | ✅ |
-| ZipRecruiter | ✅ |
-| Monster | ✅ |
-| CareerBuilder | ✅ |
-| SimplyHired | ✅ |
-| Getwork | ✅ |
-| Job.com | ✅ |
-| The Ladders | ✅ |
-| Nexxt | ✅ |
-| Jooble | ✅ |
-| Jora | ✅ |
-| Talent.com | ❌ |
-| Adzuna | ❌ |
-| We Work Remotely | ✅ |
-| Remote OK | ✅ |
-| Remotive | ✅ |
-| Remote.co | ✅ |
-| Working Nomads | ✅ |
-| Himalayas | ✅ |
-| NoDesk | ✅ |
-| JustRemote | ✅ |
-| Dynamite Jobs | ✅ |
-| RemoteHub | ✅ |
-| SkipTheDrive | ✅ |
-| Virtual Vocations | ✅ |
-| Pangian | ✅ |
-| Crossover | ✅ |
-| Wellfound | ✅ |
-| Y Combinator Jobs | ✅ |
-| Built In | ✅ |
-| Dice | ✅ |
-| Hacker News Who is Hiring | ✅ |
-| Welcome to the Jungle | ✅ |
-| Levels.fyi Jobs | ✅ |
-| TrueUp | ✅ |
-| Hire Tech Ladies | ✅ |
-| Crunchboard | ✅ |
-| Arc | ✅ |
-| Turing | ✅ |
-| USAJOBS | ✅ |
-| GovernmentJobs | ✅ |
-| Idealist | ✅ |
-| Work for Good | ❌ |
-| Health eCareers | ❌ |
-| HigherEdJobs | ❌ |
-| Lawjobs | ❌ |
-| Mediabistro | ❌ |
-| Poached Jobs | ❌ |
-| Snagajob | ❌ |
-| Craigslist jobs | ❌ |
-| Glassdoor | ❌ |
-| Handshake | ❌ |
-| Simplify.jobs | ❌ |
-| Facebook jobs | ❌ |
-| X / Twitter jobs | ❌ |
+| Direct search | Opens the job board search page, scrolls/paginates, and parses visible job cards. |
+| ATS | Uses public Greenhouse, Ashby, or Lever board/posting endpoints when discovered. |
+| Public web | Searches public web results limited to a job-site domain, then fetches matching posting pages. |
 
-## API
+After discovery, every candidate is filtered by title and location, ranked, saved to `data/job-index.json`, and shown in the UI with its source.
 
-| Endpoint | Purpose |
+## Job boards scanned
+
+### Direct search
+
+These are searched directly:
+
+| Board | Scanned |
 | --- | --- |
-| `POST /api/search` | Primary search (`targetTitle`, `location`, `maxJobs`) |
-| `POST /api/index/discover` | Index jobs without the UI |
-| `GET /api/index/jobs` | Query the local index |
-| `POST /api/index/jobs/:id/tailor` | Resume tailoring (backend only; UI pending) |
+| LinkedIn | Yes |
+| Indeed | Yes |
 
-## AI
+### ATS sources
 
-Search is fully deterministic (fetch, parse, score). No API key required.
+These are not searched like normal job boards. The app uses public ATS board/posting data when it can find matching postings:
 
-LLM-backed resume tailoring is planned for a later release. Supporting routes exist; set `OPENAI_API_KEY` when that feature is enabled.
+| Source | Method |
+| --- | --- |
+| Greenhouse | ATS |
+| Ashby | ATS |
+| Lever | ATS |
 
-## Constraints
+### Public web discovery
 
-- Listing coverage depends on publicly accessible search pages.
-- No application submission, CAPTCHA bypass, or authenticated scraping.
-- Resume tailoring is not available in the UI yet.
+These are searched through public web results, not direct board crawling:
+
+| Site | Method |
+| --- | --- |
+| GitHub hiring posts | Public web |
+| ZipRecruiter | Public web |
+| Monster | Public web |
+| CareerBuilder | Public web |
+| SimplyHired | Public web |
+| Getwork | Public web |
+| Job.com | Public web |
+| The Ladders | Public web |
+| Nexxt | Public web |
+| Jooble | Public web |
+| Jora | Public web |
+| We Work Remotely | Public web |
+| Remote OK | Public web |
+| Remotive | Public web |
+| Remote.co | Public web |
+| Working Nomads | Public web |
+| Himalayas | Public web |
+| NoDesk | Public web |
+| JustRemote | Public web |
+| Dynamite Jobs | Public web |
+| RemoteHub | Public web |
+| SkipTheDrive | Public web |
+| Virtual Vocations | Public web |
+| Pangian | Public web |
+| Crossover | Public web |
+| Wellfound | Public web |
+| Y Combinator Jobs | Public web |
+| Built In | Public web |
+| Dice | Public web |
+| Hacker News Who is Hiring | Public web |
+| Welcome to the Jungle | Public web |
+| Levels.fyi Jobs | Public web |
+| TrueUp | Public web |
+| Hire Tech Ladies | Public web |
+| Crunchboard | Public web |
+| Arc | Public web |
+| Turing | Public web |
+| DevITjobs | Public web |
+| TechFetch | Public web |
+| Authentic Jobs | Public web |
+| Gun.io | Public web |
+| Lemon.io | Public web |
+| Dribbble Jobs | Public web |
+| Behance Jobs | Public web |
+| AIGA Jobs | Public web |
+| Coroflot | Public web |
+| Product Hunt Jobs | Public web |
+| UX Jobs Board | Public web |
+| SalesJobs | Public web |
+| RepVue | Public web |
+| MarketingHire | Public web |
+| eFinancialCareers | Public web |
+| Robert Half | Public web |
+| USAJOBS | Public web |
+| GovernmentJobs | Public web |
+| Idealist | Public web |
+
+## Not scanned
+
+The app does not bypass login walls, CAPTCHA, paywalls, or access controls. Sources such as Glassdoor, Handshake, Simplify.jobs, Facebook, and X/Twitter are not scanned.
 
 ## Tests
 
