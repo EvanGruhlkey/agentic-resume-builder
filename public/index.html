@@ -8,78 +8,79 @@
   </head>
   <body>
     <main class="app-shell">
-      <section class="workspace">
-        <aside class="control-panel">
+      <div class="app-container">
+        <header class="app-header">
           <div class="brand">
-            <div class="brand-mark">RJ</div>
-            <div>
-              <h1>Resume Job Agent</h1>
-              <p>Search roles that match your target title and location.</p>
-            </div>
+            <span class="brand-mark" aria-hidden="true">RJ</span>
+            <h1>Resume Job Agent</h1>
           </div>
+        </header>
 
+        <section class="card search-card" aria-label="Job search">
           <form id="searchForm" class="search-form">
-            <label>
-              Target job title
+            <label class="field">
+              <span>Target job title</span>
               <input id="targetTitle" name="targetTitle" placeholder="Software engineer intern" required />
             </label>
 
-            <label>
-              Location
-              <input id="location" name="location" placeholder="Remote, Chicago, Austin..." />
+            <label class="field">
+              <span>Location</span>
+              <input id="location" name="location" placeholder="Remote, Chicago, Austin" />
             </label>
 
-            <label>
-              Results
+            <label class="field result-field">
+              <span>Results</span>
               <input id="maxJobs" name="maxJobs" type="number" min="1" max="200" value="25" />
             </label>
 
-            <p class="search-hint">We keep searching result pages until this count is reached or listings run out.</p>
-
-            <button class="primary-action" type="submit">
-              <span class="button-icon">⌕</span>
-              Find jobs
-            </button>
+            <button class="button button-primary search-button" type="submit">Find jobs</button>
           </form>
-        </aside>
-
-        <section class="results-panel">
-          <div class="status-strip" id="statusStrip">
-            <span class="status-dot"></span>
-            Ready to search.
-          </div>
-
-          <div class="content-grid">
-            <section class="jobs-column">
-              <div class="section-heading">
-                <h2>Job matches</h2>
-                <div class="section-actions">
-                  <button id="sortRecentBtn" type="button" class="sort-button" disabled>
-                    Most recent
-                  </button>
-                  <span id="jobCount">0 found</span>
-                </div>
-              </div>
-              <div id="jobsList" class="jobs-list empty-state">
-                Enter a job title to start searching.
-              </div>
-            </section>
-
-            <section class="detail-column">
-              <div class="section-heading">
-                <h2>Job details</h2>
-                <div class="toolbar">
-                  <a id="jobLink" class="icon-button link-button disabled" title="Open listing" target="_blank" rel="noreferrer">↗</a>
-                </div>
-              </div>
-
-              <div id="jobDetail" class="job-detail empty-state">
-                Select a job to read the listing summary.
-              </div>
-            </section>
-          </div>
         </section>
-      </section>
+
+        <div class="status-strip" id="statusStrip">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span class="status-text">Ready to search.</span>
+        </div>
+
+        <section class="content-grid">
+          <section class="jobs-column" aria-labelledby="matchesTitle">
+            <div class="section-heading">
+              <div>
+                <h2 id="matchesTitle">Matches</h2>
+                <span id="jobCount">0 found</span>
+              </div>
+              <button id="sortRecentBtn" type="button" class="button button-secondary button-sm" disabled>
+                Most recent
+              </button>
+            </div>
+
+            <div id="jobsList" class="jobs-list empty-state">
+              Enter a job title to start searching.
+            </div>
+          </section>
+
+          <section class="detail-column" aria-labelledby="detailsTitle">
+            <div class="section-heading">
+              <div>
+                <h2 id="detailsTitle">Details</h2>
+              </div>
+              <a
+                id="jobLink"
+                class="button button-secondary button-sm link-button disabled"
+                aria-disabled="true"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open listing
+              </a>
+            </div>
+
+            <div id="jobDetail" class="card job-detail empty-state">
+              Select a job to read the listing summary.
+            </div>
+          </section>
+        </section>
+      </div>
     </main>
 
     <script src="/app.js" type="module"></script>

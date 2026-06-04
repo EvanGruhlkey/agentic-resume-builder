@@ -1,6 +1,7 @@
 const form = document.querySelector("#searchForm");
 const statusStrip = document.querySelector("#statusStrip");
 const statusDot = document.querySelector(".status-dot");
+const statusText = document.querySelector(".status-text");
 const jobsList = document.querySelector("#jobsList");
 const jobCount = document.querySelector("#jobCount");
 const jobDetail = document.querySelector("#jobDetail");
@@ -77,7 +78,9 @@ function renderJobs(jobs) {
           <h3>${escapeHtml(job.title)}</h3>
           <div class="job-meta">
             <span>${escapeHtml(job.company)}</span>
+            <span class="meta-separator" aria-hidden="true"></span>
             <span>${escapeHtml(job.location)}</span>
+            <span class="meta-separator" aria-hidden="true"></span>
             <span>${escapeHtml(formatPostedDate(job.datePosted))}</span>
           </div>
           <div class="job-meta">
@@ -100,20 +103,23 @@ function selectJob(url) {
 
   jobsList.querySelectorAll(".job-card").forEach((button) => {
     button.classList.toggle("active", button.dataset.url === url);
+    button.setAttribute("aria-current", button.dataset.url === url ? "true" : "false");
   });
 
   const summary = selectedJob.excerpt || selectedJob.description || "No description available.";
-  jobDetail.className = "job-detail";
+  jobDetail.className = "card job-detail";
   jobDetail.innerHTML = `
     <div class="detail-header">
       <h3>${escapeHtml(selectedJob.title)}</h3>
       <div class="job-meta">
         <span>${escapeHtml(selectedJob.company)}</span>
+        <span class="meta-separator" aria-hidden="true"></span>
         <span>${escapeHtml(selectedJob.location)}</span>
+        <span class="meta-separator" aria-hidden="true"></span>
         <span>${escapeHtml(formatPostedDate(selectedJob.datePosted))}</span>
       </div>
       <div class="job-meta">
-        <span class="badge source-badge">Source: ${escapeHtml(formatJobSource(selectedJob))}</span>
+        <span class="badge source-badge">${escapeHtml(formatJobSource(selectedJob))}</span>
       </div>
     </div>
     <div class="job-description">${escapeHtml(summary)}</div>
@@ -121,6 +127,7 @@ function selectJob(url) {
 
   jobLink.href = selectedJob.url;
   jobLink.classList.remove("disabled");
+  jobLink.removeAttribute("aria-disabled");
 }
 
 function applySort() {
@@ -170,17 +177,18 @@ function clearResults() {
   jobCount.textContent = "0 found";
   jobsList.className = "jobs-list empty-state";
   jobsList.textContent = "Searching...";
-  jobDetail.className = "job-detail empty-state";
+  jobDetail.className = "card job-detail empty-state";
   jobDetail.textContent = "Select a job to read the listing summary.";
   jobLink.removeAttribute("href");
   jobLink.classList.add("disabled");
+  jobLink.setAttribute("aria-disabled", "true");
 }
 
 function setBusy(isBusy, message, isError = false) {
-  form.querySelector(".primary-action").disabled = isBusy;
+  form.querySelector(".search-button").disabled = isBusy;
   statusDot.classList.toggle("busy", isBusy);
   statusStrip.classList.toggle("error", isError);
-  statusStrip.lastChild.textContent = ` ${message}`;
+  statusText.textContent = message;
 }
 
 function formatPostedDate(value) {
