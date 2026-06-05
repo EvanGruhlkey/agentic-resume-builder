@@ -3,42 +3,37 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { extractResumeInput } from "./resumeParser.js";
 import { tailorResumeForJob } from "./tailor.js";
-import { getLlmStatus, tailorResumeWithLlm } from "./llm.js";
+import { tailorResumeWithLlm } from "./llm.js";
 import { loadIndexedJob, runJobDiscovery, searchIndexedJobs } from "./jobIndex/indexer.js";
-import { jobIndexerSourceCatalogForClient } from "./jobIndex/adapters.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const DEFAULT_JOBS_OUTPUT = path.join("data", "jobs.md");
 const DEFAULT_TAILOR_OUTPUT = path.join("data", "tailored-resume.md");
-const KNOWN_COMMANDS = new Set(["search", "find", "discover", "list", "jobs", "tailor", "sources", "status", "help"]);
+const COMMAND_ALIASES = new Map([
+  ["find", "search"],
+  ["discover", "search"],
+  ["jobs", "list"]
+]);
+const KNOWN_COMMANDS = new Set(["search", "list", "tailor", "help", ...COMMAND_ALIASES.keys()]);
 
 export async function main(argv = process.argv.slice(2)) {
   const args = parseArgs(argv);
   const command = resolveCommand(args);
 
-  if (readBoolean(args, ["help", "h"], false) || command === "help") {
+  if (readFlag(args, ["help", "h"]) || command === "help") {
     printHelp();
     return;
   }
 
   switch (command) {
     case "search":
-    case "find":
-    case "discover":
       await runSearchCommand(args);
       return;
     case "list":
-    case "jobs":
       await runListCommand(args);
       return;
     case "tailor":
       await runTailorCommand(args);
-      return;
-    case "sources":
-      await runSourcesCommand(args);
-      return;
-    case "status":
-      runStatusCommand();
       return;
     default:
       printHelp();
@@ -46,27 +41,50 @@ export async function main(argv = process.argv.slice(2)) {
 }
 
 async function runSearchCommand(args) {
-  const targetTitle = normalizeSearchTitle(
-    readOption(args, ["title", "t", "query", "q"]) || remainingPositionals(args).join(" ")
-  );
+  const targetTitle = readSimpleSearchText(args);
   const location = String(readOption(args, ["location", "l"], "") || "").trim();
   const maxJobs = readInteger(args, ["max", "count", "limit", "n"], { min: 1, max: 250, fallback: 25 });
   const outputPath = resolveOutputPath(readOption(args, ["output", "o"], DEFAULT_JOBS_OUTPUT));
-  const format = resolveOutputFormat(args, outputPath);
-  const seeds = readArrayOption(args, ["seed", "seeds"]);
+  const format = resolveOutputFormat(outputPath);
 
   if (!targetTitle) {
-    throw new Error('Search needs a title, for example: npm start -- search --title "Software Engineer"');
+    throw new Error('Search needs a title, for example: npm start -- search "Software Engineer"');
   }
 
   console.log(`Searching for ${targetTitle}${location ? ` in ${location}` : ""}...`);
-  const discovery = await runJobDiscovery({
+  let discovery = await runJobDiscovery({
     targetTitle,
     location,
-    maxJobs,
-    seeds,
-    searchAllSources: readBoolean(args, ["all-sources"], false)
+    maxJobs
   });
+  let fallbackNote = "";
+
+  if (!discovery.jobs.length && location) {
+    console.log("No matches found with that location. Trying the same search without the location filter...");
+    discovery = await runJobDiscovery({ targetTitle, maxJobs });
+    fallbackNote = `No matches were found for ${location}, so this report uses broader matches.`;
+  }
+
+  if (!discovery.jobs.length) {
+    const indexedFallback = await searchIndexedJobs({ query: targetTitle, location, activeOnly: true, limit: maxJobs });
+    if (indexedFallback.length) {
+      discovery = {
+        ...discovery,
+        jobs: indexedFallback,
+        discovered: indexedFallback.length,
+        sourceReports: [
+          ...(discovery.sourceReports || []),
+          {
+            source: "Local index",
+            status: "fallback",
+            discovered: indexedFallback.length,
+            extracted: indexedFallback.length
+          }
+        ]
+      };
+      fallbackNote = "Live discovery returned no jobs, so this report uses matching jobs from the local index.";
+    }
+  }
 
   await writeJobsReport({
     outputPath,
@@ -80,7 +98,8 @@ async function runSearchCommand(args) {
       discovered: discovery.discovered,
       runId: discovery.runId,
       elapsedMs: discovery.elapsedMs,
-      sourceReports: discovery.sourceReports
+      sourceReports: discovery.sourceReports,
+      fallbackNote
     }
   });
 
@@ -89,14 +108,13 @@ async function runSearchCommand(args) {
 }
 
 async function runListCommand(args) {
-  const query = normalizeSearchTitle(readOption(args, ["query", "q", "title", "t"], "") || remainingPositionals(args).join(" "));
+  const query = readSimpleSearchText(args);
   const location = String(readOption(args, ["location", "l"], "") || "").trim();
   const limit = readInteger(args, ["limit", "max", "count", "n"], { min: 1, max: 250, fallback: 50 });
-  const activeOnly = readBoolean(args, ["active-only"], true);
   const outputPath = resolveOutputPath(readOption(args, ["output", "o"], DEFAULT_JOBS_OUTPUT));
-  const format = resolveOutputFormat(args, outputPath);
+  const format = resolveOutputFormat(outputPath);
 
-  const jobs = await searchIndexedJobs({ query, location, activeOnly, limit });
+  const jobs = await searchIndexedJobs({ query, location, activeOnly: true, limit });
   await writeJobsReport({
     outputPath,
     format,
@@ -106,7 +124,7 @@ async function runListCommand(args) {
       targetTitle: query,
       location,
       requestedJobs: limit,
-      activeOnly
+      activeOnly: true
     }
   });
 
@@ -114,13 +132,14 @@ async function runListCommand(args) {
 }
 
 async function runTailorCommand(args) {
-  const jobId = readOption(args, ["job", "job-id", "id", "url"]);
-  const resumePath = readOption(args, ["resume", "resume-file", "r"]);
+  const positionals = remainingPositionals(args);
+  const jobId = readOption(args, ["job", "job-id", "id", "url"]) || positionals[0];
+  const resumePath = readOption(args, ["resume", "resume-file", "r"]) || positionals[1];
   const targetTitle = normalizeSearchTitle(readOption(args, ["title", "t"], ""));
   const outputPath = resolveOutputPath(readOption(args, ["output", "o"], DEFAULT_TAILOR_OUTPUT));
 
-  if (!jobId) throw new Error("Tailoring needs --job with an indexed job id, canonical key, or URL.");
-  if (!resumePath) throw new Error("Tailoring needs --resume with a PDF, DOCX, TXT, MD, or RTF resume file.");
+  if (!jobId) throw new Error("Tailoring needs a job id or URL.");
+  if (!resumePath) throw new Error("Tailoring needs a resume file.");
 
   const job = await loadIndexedJob(jobId);
   if (!job) throw new Error(`Could not find an indexed job for ${jobId}. Run a search or list jobs first.`);
@@ -154,44 +173,6 @@ async function runTailorCommand(args) {
   console.log(`Tailoring method: ${tailoring.method}${tailoring.model ? ` (${tailoring.model})` : ""}.`);
 }
 
-async function runSourcesCommand(args) {
-  const sources = jobIndexerSourceCatalogForClient();
-  const output = readOption(args, ["output", "o"]);
-
-  if (output) {
-    const outputPath = resolveOutputPath(output);
-    const lines = [
-      "# Job Sources",
-      "",
-      `Generated: ${new Date().toISOString()}`,
-      "",
-      ...sources.map((source) => [
-        `## ${source.name}`,
-        "",
-        `- Type: ${source.type || "public source"}`,
-        `- Mode: ${source.mode || "public fetch"}`,
-        `- Status: ${source.status || "available"}`,
-        source.description ? `- Description: ${source.description}` : ""
-      ].filter(Boolean).join("\n"))
-    ];
-    await writeTextFile(outputPath, `${lines.join("\n\n")}\n`);
-    console.log(`Saved ${sources.length} sources to ${relativeToCwd(outputPath)}.`);
-    return;
-  }
-
-  for (const source of sources) {
-    console.log(`${source.name} - ${source.type || "public source"} - ${source.mode || "public fetch"}`);
-  }
-}
-
-function runStatusCommand() {
-  const llm = getLlmStatus();
-  console.log("Resume Job Agent CLI");
-  console.log(`LLM tailoring: ${llm.enabled ? `enabled (${llm.model})` : "disabled"}`);
-  console.log(`LLM job extraction: ${llm.jobExtractionEnabled ? "enabled" : "disabled"}`);
-  console.log("Default jobs output: data/jobs.md");
-}
-
 async function writeJobsReport({ outputPath, format, jobs, metadata }) {
   const content = format === "text"
     ? formatJobsAsText(jobs, metadata)
@@ -215,6 +196,7 @@ function formatJobsAsMarkdown(jobs, metadata) {
   if (metadata.runId) lines.push(`Run ID: ${metadata.runId}`);
   if (Number.isFinite(metadata.elapsedMs)) lines.push(`Elapsed: ${formatElapsed(metadata.elapsedMs)}`);
   if (metadata.activeOnly !== undefined) lines.push(`Active only: ${metadata.activeOnly ? "yes" : "no"}`);
+  if (metadata.fallbackNote) lines.push(`Note: ${metadata.fallbackNote}`);
 
   lines.push(
     "",
@@ -277,6 +259,7 @@ function formatJobsAsText(jobs, metadata) {
   if (metadata.runId) lines.push(`Run ID: ${metadata.runId}`);
   if (Number.isFinite(metadata.elapsedMs)) lines.push(`Elapsed: ${formatElapsed(metadata.elapsedMs)}`);
   if (metadata.activeOnly !== undefined) lines.push(`Active only: ${metadata.activeOnly ? "yes" : "no"}`);
+  if (metadata.fallbackNote) lines.push(`Note: ${metadata.fallbackNote}`);
 
   lines.push(
     "",
@@ -363,26 +346,19 @@ function printHelp() {
 Resume Job Agent CLI
 
 Usage:
-  npm start -- search --title "Software Engineer" --location "Chicago" --max 25
-  npm start -- list --query "Software Engineer" --output data/jobs.txt
-  npm start -- tailor --job <job-id-or-url> --resume ./resume.pdf
-  npm start -- sources
-  npm start -- status
+  npm start -- search "Software Engineer" --location "Remote" --max 25
+  npm start -- list "Software Engineer"
+  npm start -- tailor <job-id-or-url> ./resume.pdf
 
 Commands:
   search    Discover jobs, update data/job-index.json, and save a jobs report.
   list      Save matching jobs from the existing local index without searching the web.
   tailor    Create a tailored resume Markdown file for an indexed job.
-  sources   Print supported public source categories.
-  status    Show local CLI and LLM status.
 
-Common options:
-  --title, -t       Target job title.
-  --query, -q       Query for indexed jobs.
-  --location, -l    Location filter.
-  --max, -n         Number of jobs to request.
-  --output, -o      Report path. Defaults to data/jobs.md.
-  --format          markdown or text. Inferred from .md or .txt when omitted.
+Options:
+  --location    Optional location for search or list.
+  --max         Number of jobs to save.
+  --output      Report path. Defaults to data/jobs.md.
 `.trim());
 }
 
@@ -441,8 +417,10 @@ function normalizeOptionKey(key) {
 
 function resolveCommand(args) {
   const first = String(args._[0] || "").toLowerCase();
+  if (COMMAND_ALIASES.has(first)) return COMMAND_ALIASES.get(first);
   if (KNOWN_COMMANDS.has(first)) return first;
   if (readOption(args, ["title", "query"])) return "search";
+  if (args._.length) return "search";
   return "help";
 }
 
@@ -461,17 +439,16 @@ function readOption(args, keys, fallback = "") {
   return fallback;
 }
 
-function readArrayOption(args, keys) {
-  return keys
-    .flatMap((key) => {
-      const value = args[normalizeOptionKey(key)];
-      if (value === undefined) return [];
-      return Array.isArray(value) ? value : [value];
-    })
-    .flatMap((value) => String(value).split(","))
-    .map((value) => value.trim())
-    .filter(Boolean)
-    .map((url) => ({ url }));
+function readSimpleSearchText(args) {
+  const optionText = readOption(args, ["title", "t", "query", "q"], "");
+  const positionalText = remainingPositionals(args).join(" ");
+  return normalizeSearchTitle([optionText, positionalText].filter(Boolean).join(" "));
+}
+
+function readFlag(args, keys) {
+  const value = readOption(args, keys, false);
+  if (typeof value === "boolean") return value;
+  return ["true", "1", "yes", "on"].includes(String(value).toLowerCase());
 }
 
 function readInteger(args, keys, { min, max, fallback }) {
@@ -480,21 +457,11 @@ function readInteger(args, keys, { min, max, fallback }) {
   return Math.min(max, Math.max(min, Math.round(value)));
 }
 
-function readBoolean(args, keys, fallback) {
-  const value = readOption(args, keys, null);
-  if (value === null) return fallback;
-  if (typeof value === "boolean") return value;
-  return ["true", "1", "yes", "on"].includes(String(value).toLowerCase());
-}
-
 function resolveOutputPath(output) {
   return path.resolve(process.cwd(), String(output || DEFAULT_JOBS_OUTPUT));
 }
 
-function resolveOutputFormat(args, outputPath) {
-  const requested = String(readOption(args, ["format"], "") || "").toLowerCase();
-  if (["text", "txt"].includes(requested)) return "text";
-  if (["markdown", "md"].includes(requested)) return "markdown";
+function resolveOutputFormat(outputPath) {
   return path.extname(outputPath).toLowerCase() === ".txt" ? "text" : "markdown";
 }
 
