@@ -58,11 +58,3 @@ Only three options are usually needed:
 
 The output format is inferred from the file name. Use `.md` for Markdown or `.txt` for plain text.
 
-## Checks
-
-```bash
-npm run check
-npm test
-```
-
-The tool uses public job pages and APIs. It does not bypass login walls, CAPTCHAs, paywalls, or access controls.
